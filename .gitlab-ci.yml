@@ -13,6 +13,6 @@ build:
         cd dist/$os
         go build $pkg
       done
-    artefacts:
+    artifacts:
       paths:
       - dist
