@@ -45,19 +45,23 @@ func Command() *cobra.Command {
 }
 
 func run(cmd *cobra.Command, args []string) {
-	crt, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		log.Fatal("Failed to load X509 key/crt: ", err)
-	}
-	crts = []tls.Certificate{crt}
+	{
+		crt, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			log.Fatal("Failed to load X509 key/crt: ", err)
+		}
+		crts = []tls.Certificate{crt}
 
-	caBytes, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		log.Fatal("Failed to read CA certificate: ", err)
+		caBytes, err := ioutil.ReadFile(caCertFile)
+		if err != nil {
+			log.Fatal("Failed to read CA certificate: ", err)
+		}
+		if !rootCAs.AppendCertsFromPEM(caBytes) {
+			log.Fatal("Failed to parse CA certificate.")
+		}
 	}
-	if !rootCAs.AppendCertsFromPEM(caBytes) {
-		log.Fatal("Failed to parse CA certificate.")
-	}
+
+	common.StartListeners()
 
 	log.Print("Listening on ", httpBindSpec)
 	log.Fatal(http.ListenAndServe(httpBindSpec, websocket.Handler(handleWS)))

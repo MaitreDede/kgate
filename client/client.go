@@ -116,5 +116,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatal("Connection stage 3 failed: ", err)
 	}
 
+	common.StartListeners()
+
 	common.ManageSession(session)
 }

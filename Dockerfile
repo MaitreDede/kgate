@@ -7,5 +7,6 @@ run cd ${GOPATH}/src/${pkg} \
  && go install
 
 from alpine:3.7
+run apk add --update ca-certificates
 entrypoint ["/kgate"]
 copy --from=build-env /go/bin/kgate /

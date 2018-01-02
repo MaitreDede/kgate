@@ -2,15 +2,20 @@ package common
 
 import (
 	"bufio"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/hashicorp/yamux"
 	"github.com/spf13/pflag"
+
+	"github.com/mcluseau/kgate/config"
 )
 
 var (
@@ -34,8 +39,25 @@ func RegisterFlags(flags *pflag.FlagSet) {
 	flags.StringSliceVarP(&listenerSpecs, "local-transfer", "L", nil, "Local port transfers (syntax: <local addr>:<local port>:<remote addr>:<remote port>")
 }
 
-func ParseListeners() {
-	listeners = make([]*Listener, 0, len(listenerSpecs))
+func parseListeners() {
+	listeners = make([]*Listener, 0)
+
+	cfgEnv := os.Getenv("CONFIG")
+
+	if cfgEnv != "" {
+		cfg := &config.Config{}
+		if err := json.Unmarshal([]byte(cfgEnv), cfg); err != nil {
+			log.Fatal("failed to parse CONFIG env: ", err)
+		}
+
+		for port, tr := range cfg.LocalTransfers {
+			listeners = append(listeners, &Listener{
+				Listen: fmt.Sprintf(":%d", port),
+				Target: tr.Target,
+			})
+		}
+	}
+
 	for _, spec := range listenerSpecs {
 		parts := strings.Split(spec, ":")
 
@@ -51,8 +73,6 @@ func ParseListeners() {
 }
 
 func ManageSession(session *yamux.Session) error {
-	ParseListeners()
-
 	sessionMutex.Lock()
 
 	if remote != nil {
@@ -70,26 +90,26 @@ func ManageSession(session *yamux.Session) error {
 		return err
 	}
 
+	sessionMutex.Lock()
+	listenRemote(session)
+	if remote == session {
+		remote = nil
+	}
+	sessionMutex.Unlock()
+
+	return nil
+}
+
+func StartListeners() {
+	parseListeners()
+
 	listenersMutex.Lock()
 	defer listenersMutex.Unlock()
 
-	wg := sync.WaitGroup{}
 	for _, listener := range listeners {
 		l := listener
-		wg.Add(1)
-		go func() {
-			startListener(l.Listen, l.Target)
-			wg.Done()
-		}()
+		go startListener(l.Listen, l.Target)
 	}
-
-	wg.Add(1)
-	go listenRemote(session)
-
-	wg.Wait()
-
-	log.Print("Session finished.")
-	return nil
 }
 
 func startListener(bindSpec, target string) {
@@ -109,15 +129,15 @@ func startListener(bindSpec, target string) {
 }
 
 func handleConn(conn net.Conn, target string) {
-	log.Print("connecting to ", target)
-	defer log.Print("connection to ", target, " finished")
-
 	defer conn.Close()
 
 	session := remote
 	if session == nil {
 		return
 	}
+
+	log.Print("tunneling to ", target)
+	defer log.Print("tunneling to ", target, " finished")
 
 	stream, err := session.Open()
 	if err != nil {
