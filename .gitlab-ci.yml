@@ -8,7 +8,8 @@ build:
     - ln -s $PWD /go/src/$pkg
     - cd /go/src/$pkg
     - mkdir dist
-    - for os in linux windows darwin; do
+    - |
+      for os in linux windows darwin; do
         mkdir dist/$os
         cd dist/$os
         go build $pkg
