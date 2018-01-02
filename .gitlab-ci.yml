@@ -6,7 +6,7 @@ build:
     - pkg=github.com/mcluseau/kgate
     - mkdir -p /go/src/$(dirname $pkg)
     - ln -s $PWD /go/src/$pkg
-    - cd $pkg
+    - cd /go/src/$pkg
     - mkdir dist
     - for os in linux windows darwin; do
         mkdir dist/$os
