@@ -9,12 +9,14 @@ build:
     - cd /go/src/$pkg
     - mkdir dist
     - |
+      set -ex
       for os in linux windows darwin; do
         mkdir dist/$os
         cd dist/$os
         GOOS=$os go build $pkg
         cd -
       done
+    - cd dist/linux && go build $pkg/cmd/kgatectl
     artifacts:
       paths:
       - dist
