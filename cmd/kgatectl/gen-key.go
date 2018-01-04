@@ -43,9 +43,11 @@ func genKeyRun(cmd *Command, args []string) {
 	zw := zip.NewWriter(out)
 
 	for name, data := range map[string][]byte{
-		"ca.crt":     secCA.Data["tls.crt"],
-		"client.crt": sec.Data["tls.crt"],
-		"client.key": sec.Data["tls.key"],
+		"url":         []byte("ws://kgate." + namespace + ".dev.isi.nc:80"),
+		"server-name": []byte("kgate"),
+		"ca.crt":      secCA.Data["tls.crt"],
+		"client.crt":  sec.Data["tls.crt"],
+		"client.key":  sec.Data["tls.key"],
 	} {
 		f, err := zw.Create(name)
 		if err != nil {

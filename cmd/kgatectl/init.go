@@ -7,6 +7,7 @@ import (
 	ext "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	k "github.com/mcluseau/kubeclient"
 )
@@ -163,6 +164,48 @@ func initRun(cmd *Command, args []string) {
 	} else if err != nil {
 		log.Fatal(err)
 	}
+
+	externalName := "kgate." + namespace + ".dev.isi.nc"
+
+	ings := k.Client().ExtensionsV1beta1().Ingresses(namespace)
+	ing, err := ings.Get("kgate", getOpts)
+	if errors.IsNotFound(err) {
+		log.Print("Exposing kgate to host ", externalName)
+		ing = &ext.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serverName,
+				Namespace: namespace,
+			},
+			Spec: ext.IngressSpec{
+				Rules: []ext.IngressRule{
+					{
+						Host: externalName,
+						IngressRuleValue: ext.IngressRuleValue{
+							HTTP: &ext.HTTPIngressRuleValue{
+								Paths: []ext.HTTPIngressPath{
+									{
+										Backend: ext.IngressBackend{
+											ServiceName: serverName,
+											ServicePort: intstr.FromInt(80),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		if _, err := ings.Create(ing); err != nil {
+			log.Fatal(err)
+		}
+
+	} else if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Print("kgate exposed to host ", externalName)
 }
 
 func selector() *metav1.LabelSelector {
