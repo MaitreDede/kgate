@@ -30,6 +30,7 @@ func main() {
 	cmd.AddCommand(
 		initCommand(),
 		exposeRemoteCommand(),
+		genKeyCommand(),
 	)
 
 	cmd.PersistentPreRun = func(cmd *Command, args []string) {

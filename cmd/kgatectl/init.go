@@ -206,5 +206,6 @@ func getOrCreateTLS(name string, createKeyCert func() ([]byte, []byte)) *corev1.
 		log.Fatal("failed to fetch secret ", name, ": ", err)
 	}
 
+	log.Print("Secret ", name, " already exists, not regenerating")
 	return sec
 }
