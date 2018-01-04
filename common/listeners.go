@@ -112,6 +112,18 @@ func StartListeners() {
 	}
 }
 
+func Stop() {
+	sessionMutex.Lock()
+	defer sessionMutex.Unlock()
+
+	if remote == nil {
+		return
+	}
+
+	remote.Close()
+	remote = nil
+}
+
 func startListener(bindSpec, target string) {
 	log.Print("Listening on ", bindSpec)
 	l, err := net.Listen("tcp", bindSpec)
