@@ -19,7 +19,7 @@ build:
         GOOS=$os GOARCH=$arch go build $pkg
         cd -
       done
-    - cd dist/linux && go build $pkg/cmd/kgatectl
+    - cd dist/linux-amd64 && go build $pkg/cmd/kgatectl
     artifacts:
       paths:
       - dist
