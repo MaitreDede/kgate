@@ -12,7 +12,8 @@ build:
       set -ex
       for spec in linux:amd64 windows:386 windows:amd64 darwin:amd64; do
         echo "build for $spec"
-        echo $spec |IFS=: read os arch
+        os=${spec%%:*}
+        arch=${spec#*:}
         mkdir dist/$os-$arch
         cd dist/$os-$arch
         GOOS=$os GOARCH=$arch go build $pkg
