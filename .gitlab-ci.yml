@@ -10,10 +10,12 @@ build:
     - mkdir dist
     - |
       set -ex
-      for os in linux windows darwin; do
-        mkdir dist/$os
-        cd dist/$os
-        GOOS=$os go build $pkg
+      for spec in linux:amd64 windows:386 windows:amd64 darwin:amd64; do
+        echo "build for $spec"
+        echo $spec |IFS=: read os arch
+        mkdir dist/$os-$arch
+        cd dist/$os-$arch
+        GOOS=$os GOARCH=$arch go build $pkg
         cd -
       done
     - cd dist/linux && go build $pkg/cmd/kgatectl
