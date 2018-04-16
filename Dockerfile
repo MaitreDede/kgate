@@ -1,8 +1,8 @@
-from golang:1.9.2-alpine3.7 as build-env
+from golang:1.10.1-alpine3.7 as build-env
 env pkg github.com/mcluseau/kgate
 add . ${GOPATH}/src/${pkg}
 run cd ${GOPATH}/src/${pkg} \
- && go vet  ./... \
+ && go vet -composites=false ./... \
  && go test ./... \
  && go install
 

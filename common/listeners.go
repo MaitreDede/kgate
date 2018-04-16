@@ -1,7 +1,7 @@
 package common
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,8 +23,7 @@ var (
 
 	remote *yamux.Session
 
-	listenersMutex = sync.Mutex{}
-	sessionMutex   = sync.Mutex{}
+	remoteMutex = sync.Mutex{}
 
 	listenerSpecs []string
 	listeners     []*Listener
@@ -73,15 +72,14 @@ func parseListeners() {
 }
 
 func ManageSession(session *yamux.Session) error {
-	sessionMutex.Lock()
-
-	if remote != nil {
-		remote.Close()
-	}
-
+	remoteMutex.Lock()
+	prevRemote := remote
 	remote = session
+	remoteMutex.Unlock()
 
-	sessionMutex.Unlock()
+	if prevRemote != nil {
+		prevRemote.Close()
+	}
 
 	if pingRTT, err := session.Ping(); err == nil {
 		log.Print("Session opened (ping: ", pingRTT, ")")
@@ -90,12 +88,10 @@ func ManageSession(session *yamux.Session) error {
 		return err
 	}
 
-	sessionMutex.Lock()
 	listenRemote(session)
 	if remote == session {
 		remote = nil
 	}
-	sessionMutex.Unlock()
 
 	return nil
 }
@@ -103,25 +99,10 @@ func ManageSession(session *yamux.Session) error {
 func StartListeners() {
 	parseListeners()
 
-	listenersMutex.Lock()
-	defer listenersMutex.Unlock()
-
 	for _, listener := range listeners {
 		l := listener
 		go startListener(l.Listen, l.Target)
 	}
-}
-
-func Stop() {
-	sessionMutex.Lock()
-	defer sessionMutex.Unlock()
-
-	if remote == nil {
-		return
-	}
-
-	remote.Close()
-	remote = nil
 }
 
 func startListener(bindSpec, target string) {
@@ -195,24 +176,32 @@ func listenRemote(session *yamux.Session) {
 func handleClientConnection(conn net.Conn) {
 	defer conn.Close()
 
-	bufIn := bufio.NewReader(conn)
-
 	// read the target
-	targetAddr, err := bufIn.ReadString('\n')
-	if err != nil {
-		log.Print("client read error: ", err)
-		return
+	buf := &bytes.Buffer{}
+	oneByte := make([]byte, 1)
+	for {
+		_, err := conn.Read(oneByte)
+		if err != nil {
+			log.Print("client read error while reading target: ", err)
+			return
+		}
+
+		if oneByte[0] == '\n' {
+			break
+		}
+
+		buf.Write(oneByte)
 	}
+
+	targetAddr := buf.String()
 
 	// TODO validate targetAddr allowance
 
 	// proxy
-	targetAddr = targetAddr[:len(targetAddr)-1]
-
-	proxy(conn, bufIn, "tcp", targetAddr)
+	proxy(conn, "tcp", targetAddr)
 }
 
-func proxy(conn net.Conn, in io.Reader, proto, targetAddr string) {
+func proxy(conn net.Conn, proto, targetAddr string) {
 	log.Print("proxying to ", targetAddr)
 	defer log.Print("proxying to ", targetAddr, " finished")
 
@@ -224,22 +213,15 @@ func proxy(conn net.Conn, in io.Reader, proto, targetAddr string) {
 
 	defer target.Close()
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-
 	go func() {
 		io.Copy(conn, target)
 		closeWrite(conn)
-		wg.Done()
 	}()
 
 	go func() {
-		io.Copy(target, in)
+		io.Copy(target, conn)
 		target.Close()
-		wg.Done()
 	}()
-
-	wg.Wait()
 }
 
 type closeWriter interface {
