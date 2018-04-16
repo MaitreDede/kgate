@@ -81,6 +81,8 @@ func run(cmd *cobra.Command, args []string) {
 		loadConfigFromZip(args[0], cfg)
 	}
 
+	common.StartListeners()
+
 	for {
 		connect(cfg)
 
@@ -232,8 +234,6 @@ func connect(cfg *config) {
 		log.Print("Connection stage 3 failed: ", err)
 		return
 	}
-
-	common.StartListeners()
 
 	common.ManageSession(session)
 }

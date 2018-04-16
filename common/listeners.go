@@ -117,7 +117,7 @@ func startListener(bindSpec, target string) {
 			log.Fatal("Accept() failed: ", err)
 		}
 
-		handleConn(conn, target)
+		go handleConn(conn, target)
 	}
 }
 
@@ -213,15 +213,22 @@ func proxy(conn net.Conn, proto, targetAddr string) {
 
 	defer target.Close()
 
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
 	go func() {
 		io.Copy(conn, target)
 		closeWrite(conn)
+		wg.Done()
 	}()
 
 	go func() {
 		io.Copy(target, conn)
 		target.Close()
+		wg.Done()
 	}()
+
+	wg.Wait()
 }
 
 type closeWriter interface {
