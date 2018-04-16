@@ -1,5 +1,5 @@
 build:
-    image: dkr.isi.nc/golang:1.9
+    image: golang:1.10.1
     tags:
     - ci-kubernetes
     script:
