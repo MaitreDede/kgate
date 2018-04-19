@@ -21,7 +21,6 @@ func genKeyCommand() *Command {
 }
 
 func genKeyRun(cmd *Command, args []string) {
-
 	secretCA = serverName + "-ca"
 
 	secCA, err := k.Client().CoreV1().Secrets(namespace).Get(secretCA, getOpts)
@@ -29,7 +28,7 @@ func genKeyRun(cmd *Command, args []string) {
 		log.Fatal(err)
 	}
 
-	sec := getOrCreateTLS("client", func() ([]byte, []byte) {
+	sec := getOrCreateTLS(serverName+"-client", func() ([]byte, []byte) {
 		key, keyPEM := PrivateKeyPEM()
 		crtPEM := HostCertificatePEM(secCA.Data, 1, key, "client")
 		return keyPEM, crtPEM
