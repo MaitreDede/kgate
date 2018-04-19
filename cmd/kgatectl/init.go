@@ -12,15 +12,11 @@ import (
 	k "github.com/mcluseau/kubeclient"
 )
 
-const (
-	secretCA     = "kgate-ca"
-	secretServer = "kgate-server"
-	deployServer = "kgate"
-)
-
 var (
-	serverName  string
-	deployImage string
+	secretCA     string
+	secretServer string
+	serverName   string
+	deployImage  string
 )
 
 func initCommand() *Command {
@@ -37,6 +33,10 @@ func initCommand() *Command {
 }
 
 func initRun(cmd *Command, args []string) {
+
+	secretCA = serverName + "-ca"
+	secretServer = serverName + "-server"
+
 	secCA := getOrCreateTLS(secretCA, func() ([]byte, []byte) {
 		key, keyPEM := PrivateKeyPEM()
 		crtPEM := SelfSignedCertificatePEM("CA", "CA", 5, key)
@@ -50,14 +50,14 @@ func initRun(cmd *Command, args []string) {
 	})
 
 	deploys := k.Client().ExtensionsV1beta1().Deployments(namespace)
-	if _, err := deploys.Get(deployServer, getOpts); errors.IsNotFound(err) {
-		log.Print("Creating deployment ", deployServer)
+	if _, err := deploys.Get(serverName, getOpts); errors.IsNotFound(err) {
+		log.Print("Creating deployment ", serverName)
 
 		var one int32 = 1
 
 		dep := &ext.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      deployServer,
+				Name:      serverName,
 				Namespace: namespace,
 			},
 			Spec: ext.DeploymentSpec{
@@ -66,13 +66,13 @@ func initRun(cmd *Command, args []string) {
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
-							"app": deployServer,
+							"app": serverName,
 						},
 					},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
 							{
-								Name:  "kgate",
+								Name:  serverName,
 								Image: deployImage,
 								Env: []corev1.EnvVar{
 									{
@@ -136,17 +136,17 @@ func initRun(cmd *Command, args []string) {
 	}
 
 	services := k.Client().CoreV1().Services(namespace)
-	if _, err := services.Get(deployServer, getOpts); errors.IsNotFound(err) {
-		log.Print("Creating service ", deployServer)
+	if _, err := services.Get(serverName, getOpts); errors.IsNotFound(err) {
+		log.Print("Creating service ", serverName)
 
 		srv := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      deployServer,
+				Name:      serverName,
 				Namespace: namespace,
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: map[string]string{
-					"app": deployServer,
+					"app": serverName,
 				},
 				Ports: []corev1.ServicePort{
 					{
@@ -165,12 +165,12 @@ func initRun(cmd *Command, args []string) {
 		log.Fatal(err)
 	}
 
-	externalName := "kgate." + namespace + ".dev.isi.nc"
+	externalName := serverName + "." + namespace + ".dev.isi.nc"
 
 	ings := k.Client().ExtensionsV1beta1().Ingresses(namespace)
-	ing, err := ings.Get("kgate", getOpts)
+	ing, err := ings.Get(serverName, getOpts)
 	if errors.IsNotFound(err) {
-		log.Print("Exposing kgate to host ", externalName)
+		log.Print("Exposing ", serverName, " to host ", externalName)
 		ing = &ext.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serverName,
@@ -205,11 +205,11 @@ func initRun(cmd *Command, args []string) {
 		log.Fatal(err)
 	}
 
-	log.Print("kgate exposed to host ", externalName)
+	log.Print(serverName, " exposed to host ", externalName)
 }
 
 func selector() *metav1.LabelSelector {
-	sel, err := metav1.ParseToLabelSelector("app=" + deployServer)
+	sel, err := metav1.ParseToLabelSelector("app=" + serverName)
 	if err != nil {
 		panic(err)
 	}

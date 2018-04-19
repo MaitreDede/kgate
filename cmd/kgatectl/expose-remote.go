@@ -92,7 +92,7 @@ func portSpec() corev1.ServicePort {
 }
 
 func fetchConfig() (*ext.Deployment, *config.Config) {
-	dep, err := k.Client().ExtensionsV1beta1().Deployments(namespace).Get(deployServer, getOpts)
+	dep, err := k.Client().ExtensionsV1beta1().Deployments(namespace).Get(serverName, getOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -139,7 +139,7 @@ func getOrCreateService() *corev1.Service {
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: map[string]string{
-					"app": deployServer,
+					"app": serverName,
 				},
 				Ports: []corev1.ServicePort{portSpec()},
 			},

@@ -14,10 +14,16 @@ func genKeyCommand() *Command {
 		Run: genKeyRun,
 	}
 
+	flags := cmd.Flags()
+	flags.StringVar(&serverName, "server-name", "kgate", "The server name, for the certificate")
+
 	return cmd
 }
 
 func genKeyRun(cmd *Command, args []string) {
+
+	secretCA = serverName + "-ca"
+
 	secCA, err := k.Client().CoreV1().Secrets(namespace).Get(secretCA, getOpts)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +35,7 @@ func genKeyRun(cmd *Command, args []string) {
 		return keyPEM, crtPEM
 	})
 
-	zipFile := "kgate-client-config.zip"
+	zipFile := serverName + "-client-config.zip"
 
 	out, err := os.Create(zipFile)
 	if err != nil {
@@ -43,8 +49,8 @@ func genKeyRun(cmd *Command, args []string) {
 	zw := zip.NewWriter(out)
 
 	for name, data := range map[string][]byte{
-		"url":         []byte("ws://kgate." + namespace + ".dev.isi.nc:80"),
-		"server-name": []byte("kgate"),
+		"url":         []byte("ws://" + serverName + "." + namespace + ".dev.isi.nc:80"),
+		"server-name": []byte(serverName),
 		"ca.crt":      secCA.Data["tls.crt"],
 		"client.crt":  sec.Data["tls.crt"],
 		"client.key":  sec.Data["tls.key"],
