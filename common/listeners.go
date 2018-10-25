@@ -19,7 +19,8 @@ import (
 )
 
 var (
-	dialTimeout = 10 * time.Second
+	dialTimeout  = 10 * time.Second
+	pingInterval = 1 * time.Minute
 
 	remote *yamux.Session
 
@@ -87,6 +88,16 @@ func ManageSession(session *yamux.Session) error {
 		log.Print("Session ping failed: ", err)
 		return err
 	}
+
+	go func() {
+		for range time.Tick(pingInterval) {
+			if _, err := session.Ping(); err != nil {
+				log.Print("Session ping check failed, closing: ", err)
+				session.Close()
+				return
+			}
+		}
+	}()
 
 	listenRemote(session)
 	if remote == session {
