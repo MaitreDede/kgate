@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	apps "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ext "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -49,18 +50,18 @@ func initRun(cmd *Command, args []string) {
 		return keyPEM, crtPEM
 	})
 
-	deploys := k.Client().ExtensionsV1beta1().Deployments(namespace)
+	deploys := k.Client().Apps().Deployments(namespace)
 	if _, err := deploys.Get(serverName, getOpts); errors.IsNotFound(err) {
 		log.Print("Creating deployment ", serverName)
 
 		var one int32 = 1
 
-		dep := &ext.Deployment{
+		dep := &apps.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serverName,
 				Namespace: namespace,
 			},
-			Spec: ext.DeploymentSpec{
+			Spec: apps.DeploymentSpec{
 				Replicas: &one,
 				Selector: selector(),
 				Template: corev1.PodTemplateSpec{

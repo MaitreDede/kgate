@@ -75,12 +75,13 @@ google.golang.org/appengine/internal/remote_api
 gopkg.in/inf.v0
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
-# k8s.io/api v0.0.0-20190301173355-16f65c82b8fa
+# k8s.io/api v0.0.0-20190222213804-5cb15d344471
+k8s.io/api/apps/v1
 k8s.io/api/core/v1
 k8s.io/api/extensions/v1beta1
 k8s.io/api/apps/v1beta1
+k8s.io/api/admissionregistration/v1alpha1
 k8s.io/api/admissionregistration/v1beta1
-k8s.io/api/apps/v1
 k8s.io/api/autoscaling/v1
 k8s.io/api/apps/v1beta2
 k8s.io/api/auditregistration/v1alpha1
@@ -111,9 +112,9 @@ k8s.io/api/storage/v1beta1
 k8s.io/apimachinery/pkg/api/errors
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/util/intstr
-k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/runtime
 k8s.io/apimachinery/pkg/runtime/schema
+k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/types
 k8s.io/apimachinery/pkg/util/validation/field
 k8s.io/apimachinery/pkg/conversion
@@ -143,7 +144,7 @@ k8s.io/apimachinery/pkg/util/framer
 k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/apis/meta/v1beta1
-# k8s.io/client-go v10.0.0+incompatible
+# k8s.io/client-go v2.0.0-alpha.0.0.20190228174230-b40b2a5939e4+incompatible
 k8s.io/client-go/kubernetes
 k8s.io/client-go/rest
 k8s.io/client-go/tools/clientcmd
