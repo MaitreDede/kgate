@@ -1,13 +1,19 @@
-from golang:1.11.1-alpine3.8 as build-env
-run apk add --update gcc musl-dev
-env pkg github.com/mcluseau/kgate
-add . ${GOPATH}/src/${pkg}
-run cd ${GOPATH}/src/${pkg} \
- && go vet -composites=false ./... \
- && go test ./... \
- && go install
+# ------------------------------------------------------------------------
+from golang:1.12.0-alpine3.9 as build-env
 
-from alpine:3.8
+run apk add --update git
+env CGO_ENABLED 0
+
+workdir /src
+add go.mod go.sum ./
+run go mod download
+
+add . ./
+run go test ./...
+run go install .
+
+# ------------------------------------------------------------------------
+from alpine:3.9
+entrypoint ["/bin/kgate"]
 run apk add --update ca-certificates
-entrypoint ["/kgate"]
-copy --from=build-env /go/bin/kgate /
+copy --from=build-env /go/bin/ /bin/
