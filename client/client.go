@@ -183,7 +183,13 @@ func connect(cfg *config) {
 	if proxyUrl != "" {
 		log.Print("Using proxy")
 		var err error
-		dialer, err = proxy.SOCKS5("tcp", proxyUrl, nil, proxy.Direct)
+		var url *url.URL
+		url, err = url.Parse(proxyUrl)
+		if err != nil {
+			log.Print("Can't parse proxy url: ", err)
+			return
+		}
+		dialer, err = proxy.FromURL(url, dialer)
 		if err != nil {
 			log.Print("Unable to build the proxy: ", err)
 			return
