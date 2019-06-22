@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------
-from golang:1.12.0-alpine3.9 as build-env
+from golang:1.12.6-alpine3.9 as build-env
 
 arg GOPROXY
 env CGO_ENABLED 0
