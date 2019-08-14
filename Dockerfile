@@ -1,19 +1,19 @@
 # ------------------------------------------------------------------------
-from golang:1.12.6-alpine3.9 as build-env
+FROM golang:1.12.8-alpine3.9 as build-env
 
-arg GOPROXY
-env CGO_ENABLED 0
+ARG GOPROXY
+ENV CGO_ENABLED 0
 
-workdir /src
-add go.mod go.sum ./
-run go mod download
+WORKDIR /src
+ADD go.mod go.sum ./
+RUN go mod download
 
-add . ./
-run go test ./...
-run go install .
+ADD . ./
+RUN go test ./...
+RUN go install .
 
 # ------------------------------------------------------------------------
-from alpine:3.9
-entrypoint ["/bin/kgate"]
-run apk add --update ca-certificates
-copy --from=build-env /go/bin/ /bin/
+FROM alpine:3.10.1
+ENTRYPOINT ["/bin/kgate"]
+RUN apk add --update --no-cache ca-certificates
+COPY --from=build-env /go/bin/ /bin/
